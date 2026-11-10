@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="cucei_bot">
+  <!-- CUCEI-BOT V1: version visual mejorada. Unidades SI. -->
+  <!-- Se conservan joints, colisiones y propiedades inerciales originales. -->
+  <xacro:macro name="box_link" params="name sx sy sz mass color">
+    <link name="${name}">
+      <!-- Geometria visual: varias piezas por eslabon, independiente de collision/inertial. -->
+      <visual>
+        <geometry><box size="${sx*0.78} ${sy*0.78} ${sz*0.94}"/></geometry>
+        <material name="${name}_paint"><color rgba="${color}"/></material>
+      </visual>
+      <visual>
+        <origin xyz="0 0 ${sz*0.46}"/>
+        <geometry><cylinder radius="${max(sx,sy)*0.64}" length="${min(sz*0.18,0.055)}"/></geometry>
+        <material name="${name}_joint"><color rgba="0.16 0.19 0.24 1"/></material>
+      </visual>
+      <visual>
+        <origin xyz="0 0 ${-sz*0.46}"/>
+        <geometry><cylinder radius="${max(sx,sy)*0.58}" length="${min(sz*0.15,0.04)}"/></geometry>
+        <material name="${name}_joint"/>
+      </visual>
+      <collision><geometry><box size="${sx} ${sy} ${sz}"/></geometry></collision>
+      <inertial><mass value="${mass}"/><origin xyz="0 0 0"/><inertia ixx="${mass*(sy*sy+sz*sz)/12}" ixy="0" ixz="0" iyy="${mass*(sx*sx+sz*sz)/12}" iyz="0" izz="${mass*(sx*sx+sy*sy)/12}"/></inertial>
+    </link>
+  </xacro:macro>
+  <!-- Base circular decorativa: la masa y colision siguen siendo las del modelo original. -->
+  <link name="base_link">
+    <visual><geometry><cylinder radius="0.15" length="0.07"/></geometry><material name="base_dark"><color rgba="0.17 0.20 0.25 1"/></material></visual>
+    <visual><origin xyz="0 0 0.044"/><geometry><cylinder radius="0.105" length="0.025"/></geometry><material name="base_blue"><color rgba="0.07 0.45 0.76 1"/></material></visual>
+    <visual><origin xyz="0 0 0.064"/><geometry><cylinder radius="0.075" length="0.02"/></geometry><material name="base_metal"><color rgba="0.70 0.75 0.79 1"/></material></visual>
+    <collision><geometry><box size="0.3 0.3 0.12"/></geometry></collision>
+    <inertial><mass value="5"/><origin xyz="0 0 0"/><inertia ixx="0.0435" ixy="0" ixz="0" iyy="0.0435" iyz="0" izz="0.075"/></inertial>
+  </link>
+  <xacro:box_link name="shoulder_link" sx="0.10" sy="0.10" sz="0.34" mass="1.2" color="0.88 0.91 0.94 1"/>
+  <xacro:box_link name="upper_arm_link" sx="0.10" sy="0.10" sz="0.30" mass="1.0" color="0.88 0.91 0.94 1"/>
+  <xacro:box_link name="forearm_link" sx="0.08" sy="0.08" sz="0.24" mass="0.7" color="0.08 0.48 0.76 1"/>
+  <xacro:box_link name="wrist_link" sx="0.08" sy="0.08" sz="0.12" mass="0.35" color="0.08 0.48 0.76 1"/>
+  <xacro:box_link name="gripper_left" sx="0.025" sy="0.035" sz="0.12" mass="0.08" color="0.27 0.31 0.36 1"/>
+  <xacro:box_link name="gripper_right" sx="0.025" sy="0.035" sz="0.12" mass="0.08" color="0.27 0.31 0.36 1"/>
+  <!-- Tapas laterales de articulaciones: detalle visual, sin masa adicional. -->
+  <!-- Las tapas de cada box_link simulan rodamientos y carcasas. -->
+  <!-- Anchored to ground in Gazebo for stable inspection; RViz ignores the world geometry. -->
+  <link name="world"/>
+  <joint name="world_fixed" type="fixed"><parent link="world"/><child link="base_link"/><origin xyz="0 0 0.06"/></joint>
+  <joint name="joint_1" type="revolute"><parent link="base_link"/><child link="shoulder_link"/><origin xyz="0 0 0.23"/><axis xyz="0 0 1"/><limit lower="-3.14" upper="3.14" effort="30" velocity="1"/><dynamics damping="1" friction="0.2"/></joint>
+  <joint name="joint_2" type="revolute"><parent link="shoulder_link"/><child link="upper_arm_link"/><origin xyz="0 0 0.32"/><axis xyz="0 1 0"/><limit lower="-1.2" upper="1.2" effort="30" velocity="1"/><dynamics damping="1" friction="0.2"/></joint>
+  <joint name="joint_3" type="revolute"><parent link="upper_arm_link"/><child link="forearm_link"/><origin xyz="0 0 0.27"/><axis xyz="0 1 0"/><limit lower="-1.5" upper="1.5" effort="20" velocity="1"/><dynamics damping="1" friction="0.2"/></joint>
+  <joint name="joint_4" type="revolute"><parent link="forearm_link"/><child link="wrist_link"/><origin xyz="0 0 0.18"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="10" velocity="1"/><dynamics damping="0.5" friction="0.1"/></joint>
+  <joint name="left_finger_fixed" type="fixed"><parent link="wrist_link"/><child link="gripper_left"/><origin xyz="0 0.055 0.11"/></joint>
+  <joint name="right_finger_fixed" type="fixed"><parent link="wrist_link"/><child link="gripper_right"/><origin xyz="0 -0.055 0.11"/></joint>
+  <!-- Gazebo Classic: keep the base anchored to the world, and avoid uncontrolled falling joints. -->
+  <gazebo reference="base_link"><material>Gazebo/Grey</material></gazebo>
+</robot>
